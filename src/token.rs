@@ -1,9 +1,9 @@
 #[derive(Debug)]
 pub struct Token {
-    t_type: TokenType,
+    pub t_type: TokenType,
     literal: WTSType,
-    lexeme: String,
-    line: usize,
+    pub lexeme: String,
+    pub line: usize,
 }
 
 impl Token {
@@ -46,13 +46,13 @@ pub enum TokenType {
     DOUBLE_REDIR_RIGHT,
     DOUBLE_REDIR_LEFT,
     DUP_REDIR,
+    PIPE,
+
 
     // Literals.
     WORD,
     STRING,
     IONUMBER,
-    NONE,
-
     // Keywords.
 
     //SCRIPT,

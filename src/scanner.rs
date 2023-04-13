@@ -1,16 +1,12 @@
-use self::error::error;
-use self::token::{WTSType, Token, TokenType};
+use crate::error::error;
+use crate::token::{WTSType, Token, TokenType};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-#[path = "error.rs"]
-mod error;
-#[path = "token.rs"]
-mod token;
 
 #[derive(Debug)]
 pub struct Scanner {
     source: String,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     start: usize,
     current: usize,
     line: usize,
@@ -118,7 +114,8 @@ impl Scanner {
     */
 
     fn identifier(&mut self) {
-        while self.peek().is_alphanumeric() || self.peek() == '.' {
+        let keys = vec!['(',')','-',';','#','>','<','#'];
+        while !self.peek().is_whitespace() && !keys.contains(&self.peek()) {
             self.advance();
         }
         let key = &self.source.as_mut_str()[self.start..self.current];
@@ -148,7 +145,7 @@ impl Scanner {
                 },
                 //'+' => self.add_token(TokenType::PLUS),
                 ';' => self.add_token(TokenType::SEMICOLON),
-                '*' => self.add_token(TokenType::STAR),
+                //'*' => self.add_token(TokenType::STAR),
                 //'!' => {
                 //    if self.match_next('=') {
                 //        self.add_token(TokenType::BANG_EQUAL);
@@ -163,6 +160,9 @@ impl Scanner {
                 //        self.add_token(TokenType::EQUAL);
                 //    }
                 //}
+                '|' =>{
+                    self.add_token(TokenType::PIPE);
+                }
                 '<' => {
                     if self.match_next('<') {
                         self.add_token(TokenType::DOUBLE_REDIR_LEFT);

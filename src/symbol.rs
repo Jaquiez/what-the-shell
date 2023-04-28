@@ -13,7 +13,6 @@ pub enum Symbol {
     DOUBLE_REDIR_LEFT,
     DUP_REDIR,
     PIPE,
-
     // Literals.
     CMD,
     ARG,
@@ -31,5 +30,5 @@ pub enum Symbol {
     //VAR,
     //WHILE,
 
-    EOF,
+    EOF
 }

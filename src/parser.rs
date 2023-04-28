@@ -1,44 +1,58 @@
 use crate::scanner::Scanner;
 use crate::token::{WTSType, Token, TokenType};
 use crate::symbol::Symbol;
-
+use crate::error;
 pub struct AST{
-    tree: Node
+    cmds: Vec<Node>
 }
 
+
+#[derive(Debug)]
 struct Node{
-    symbol: Symbol,
-    left: Box<Node>,
-    right: Box<Node>
+    shell_type: WTSType,
+    flags: Vec<String>,
+    symbol: Option<Symbol>,
+    left: Option<Box<Node>>,
+    right: Option<Box<Node>>,
 }
 
 fn parse_string(){
 
 }
 
-fn parse_flag(){
-
-}
 
 
-fn parse_code(mut toks: Vec<Token>){
+fn parse_expression(mut toks: Vec<Token>) -> Vec<Node>{
+    let mut cmds: Vec<Node> = Vec::new();
+    cmds.push(Node{
+        shell_type: WTSType::NONE,
+        flags: Vec::new(),
+        symbol: None,
+        left:None,
+        right: None
+    });
+    let mut counter = 0;
     while toks.len() > 0{
         let tok = toks.remove(0);
         match tok.t_type {
             TokenType::LEFT_PAREN => {
-                //parse_expression();
             },
             TokenType::RIGHT_PAREN => {
-                //end node
+                return cmds;
             },
             TokenType::SHORT_FLAG => {
-                parse_flag();
             },
             TokenType::LONG_FLAG =>{
-                parse_flag();
             },
             TokenType::SEMICOLON => {
-                //end node!
+                cmds.push(Node{
+                    shell_type: WTSType::NONE,
+                    flags: Vec::new(),
+                    symbol: None,
+                    left:None,
+                    right: None
+                });
+                counter+=1;
             },
             TokenType::PIPE =>{
 
@@ -59,20 +73,19 @@ fn parse_code(mut toks: Vec<Token>){
 
             },
             TokenType::STRING => {
-                //treat like word
             },
             TokenType::WORD =>{
-
+                cmds[counter].symbol = Some(Symbol::CMD);
+                cmds[counter].
             },
             _=>{}
         }
-        println!("{:#?}",tok);
     }
-    
+    return cmds;
 }
 
 
 pub fn parse_program(lexer: Scanner){
-    println!("Entering parser\n{:#?}",lexer.tokens);
-    parse_code(lexer.tokens);
+    //println!("Entering parser\n{:#?}",lexer.tokens);
+    parse_expression(lexer.tokens);
 }

@@ -21,9 +21,10 @@ impl Token {
 pub enum WTSType {
     String(String),
     Number(i32),
+    EXPR,
     NONE
 }
-#[derive(Debug,Clone, Copy)]
+#[derive(Debug,Clone, Copy,  PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
     LEFT_PAREN,

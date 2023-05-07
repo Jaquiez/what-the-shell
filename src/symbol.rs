@@ -1,4 +1,4 @@
-#[derive(Debug,Clone, Copy)]
+#[derive(Debug,Clone, Copy, PartialEq, Eq)]
 pub enum Symbol {
     // Single-character tokens.
     LEFT_PAREN,
@@ -18,6 +18,7 @@ pub enum Symbol {
     ARG,
     STRING,
     IONUMBER,
+    FILE,
     // Keywords.
 
     //SCRIPT,

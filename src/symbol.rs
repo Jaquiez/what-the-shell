@@ -29,6 +29,6 @@ pub enum Symbol {
     //TRUE,
     //VAR,
     //WHILE,
-
+    NONE,
     EOF
 }

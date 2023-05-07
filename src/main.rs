@@ -2,17 +2,18 @@ mod scanner;
 mod parser;
 mod token;
 mod error;
-mod symbol;
+mod ast;
+mod interpreter;
 use scanner::Scanner;
 
 
 use std::{ env, fs, io::{ stdin, stdout, Write } };
 
-use crate::parser::parse_program;
+use crate::{parser::parse_program, interpreter::interpret_program};
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 2 {
-        println!("Usage: rlox [path_to_script]");
+        println!("Usage: WTS [path_to_script]");
     } else if args.len() == 2 {
         run_file(&args[1]);
     } else {
@@ -22,10 +23,11 @@ fn main() {
 
 fn run(source: &String) {
     let mut lexer = Scanner::new(source.to_string());
-    println!("{:#?}", lexer);
+    println!("Initial Source: {}",source.to_string());
     lexer.scan_tokens();
     println!("{:#?}", lexer);
-    parse_program(lexer);
+    let ast = parse_program(lexer).unwrap();
+    interpret_program(&ast);
 }
 fn run_file(path: &String) {
     let contents = fs::read_to_string(path).expect(format!("{path} is not a valid path").as_str());

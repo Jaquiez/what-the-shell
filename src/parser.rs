@@ -1,31 +1,8 @@
 use crate::scanner::Scanner;
 use crate::token::{WTSType, Token, TokenType};
-use crate::symbol::Symbol;
+use crate::ast::{Symbol,AST,Kind,Expr};
 use crate::error::{self, error};
 
-#[derive(Debug)]
-pub struct AST{
-    exprs: Vec<Expr>
-}
-
-
-#[derive(Debug)]
-struct Expr{
-    kind: Kind,
-    flags: Vec<String>,
-    args: Vec<String>,
-    symbol: Symbol,
-    value: Option<String>,
-    left: Option<AST>,
-    right: Option<AST>,
-}
-
-#[derive(Debug,PartialEq,Eq)]
-pub enum Kind{
-    NONE,
-    EXPR,
-    VALUE
-}
 
 
 fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
@@ -86,7 +63,7 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
             },
             TokenType::SEMICOLON => {
                 ast.exprs.push(Expr{
-                    kind: Kind::NONE,
+                    kind: Kind::EXPR,
                     value: Some(String::new()),
                     flags: Vec::new(),
                     args: Vec::new(),

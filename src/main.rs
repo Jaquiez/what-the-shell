@@ -27,7 +27,7 @@ fn run(source: &String) {
     lexer.scan_tokens();
     println!("{:#?}", lexer);
     let ast = parse_program(lexer).unwrap();
-    interpret_program(&ast);
+    interpret_program(&ast,false);
 }
 fn run_file(path: &String) {
     let contents = fs::read_to_string(path).expect(format!("{path} is not a valid path").as_str());

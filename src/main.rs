@@ -11,14 +11,7 @@ use std::{ env, fs, io::{ stdin, stdout, Write } };
 
 use crate::{parser::parse_program, interpreter::interpret_program};
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 2 {
-        println!("Usage: WTS [path_to_script]");
-    } else if args.len() == 2 {
-        run_file(&args[1]);
-    } else {
-        run_prompt();
-    }
+    run_prompt();
 }
 
 fn run(source: &String) {
@@ -27,7 +20,7 @@ fn run(source: &String) {
     lexer.scan_tokens();
     println!("{:#?}", lexer);
     let ast = parse_program(lexer).unwrap();
-    interpret_program(&ast,false);
+    interpret_program(&ast,interpreter::ExecType::NORMAL);
 }
 fn run_file(path: &String) {
     let contents = fs::read_to_string(path).expect(format!("{path} is not a valid path").as_str());

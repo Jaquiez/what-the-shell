@@ -13,8 +13,6 @@ pub struct Scanner {
 }
 
 
-
-//This is for scripting functionality later
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = HashMap::from([
         //("WTScript",TokenType::SCRIPT),

@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub struct Token {
     pub t_type: TokenType,
-    literal: WTSType,
+    pub literal: WTSType,
     pub lexeme: String,
     pub line: usize,
 }

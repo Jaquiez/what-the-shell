@@ -44,11 +44,11 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                 if(flag.t_type != TokenType::WORD){
                     error(flag.line,String::from("Parser error: Invalid flag"));
                 }
-                if ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
-                    ast.exprs[counter].left.as_mut().unwrap().exprs[0].flags.push(flag.lexeme);
+                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                    ast.exprs[counter].left.as_mut().unwrap().exprs[0].flags.push(String::from("-") + &flag.lexeme);
                 }
                 else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
-                    ast.exprs[counter].right.as_mut().unwrap().exprs[0].flags.push(flag.lexeme);
+                    ast.exprs[counter].right.as_mut().unwrap().exprs[0].flags.push(String::from("-") + &flag.lexeme);
                 }
                 else{
                     error(tok.line,String::from("Error when parsing flag"));
@@ -56,10 +56,18 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
             },
             TokenType::LONG_FLAG =>{
                 let flag = toks.remove(0);
-                if (flag.t_type != TokenType::WORD){
-                    error::error(flag.line,String::from("Error"));
+                if(flag.t_type != TokenType::WORD){
+                    error(flag.line,String::from("Parser error: Invalid flag"));
                 }
-                ast.exprs[counter].flags.push(flag.lexeme);
+                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                    ast.exprs[counter].left.as_mut().unwrap().exprs[0].flags.push(String::from("--") + &flag.lexeme);
+                }
+                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                    ast.exprs[counter].right.as_mut().unwrap().exprs[0].flags.push(String::from("--") + &flag.lexeme);
+                }
+                else{
+                    error(tok.line,String::from("Error when parsing flag"));
+                }
             },
             TokenType::SEMICOLON => {
                 ast.exprs.push(Expr{
@@ -119,11 +127,15 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
             TokenType::WORD | TokenType::STRING =>{
                 if ast.exprs[counter].left.is_none(){
                     ast.exprs[counter].left = Some(AST { exprs: Vec::new() });
+                    let val = match tok.literal {
+                        WTSType::String(s)=>s,
+                        _=>tok.lexeme
+                    };
                     ast.exprs[counter].left.as_mut().unwrap().exprs.push(
                         Expr { 
                             kind: Kind::VALUE, 
                             flags: Vec::new(), 
-                            value: Some(String::from(tok.lexeme)),
+                            value: Some(val),
                             args: Vec::new(), 
                             symbol: Symbol::CMD, 
                             left: None, 
@@ -131,7 +143,11 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                         });
                 }
                 else if ast.exprs[counter].symbol==Symbol::NONE && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
-                    ast.exprs[counter].left.as_mut().unwrap().exprs[0].args.push(tok.lexeme);
+                    let val = match tok.literal {
+                        WTSType::String(s)=>s,
+                        _=>tok.lexeme
+                    };
+                    ast.exprs[counter].left.as_mut().unwrap().exprs[0].args.push(val);
                 }
                 else if ast.exprs[counter].right.is_none(){
                     ast.exprs[counter].right = Some(AST { exprs: Vec::new() });
@@ -185,6 +201,5 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
 pub fn parse_program(mut lexer: Scanner) -> Option<AST>{
     //println!("Entering parser\n{:#?}",lexer.tokens);
     let ast = parse_expression(&mut lexer.tokens,false);
-    println!("{:#?}",ast);
     return ast;
 }

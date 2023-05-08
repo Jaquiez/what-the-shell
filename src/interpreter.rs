@@ -74,7 +74,7 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     if expr.left.is_none() {
                         return None;
                     }
-                    let astleft = interpret_program(expr.left.as_ref().unwrap(),exec_type);
+                    let astleft = interpret_program(expr.left.as_ref().unwrap(),ExecType::QUIET);
                     if astleft.is_none(){
                         //println!("{:#?}",astleft);
                         return None;
@@ -152,8 +152,8 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                 Symbol::PIPE=>{
                     let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::QUIET).unwrap(); 
                     let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
-                    //println!("LEFT -> {:#?}",left);
-                    //println!("RIGHT -> {:#?}",right);
+                    println!("LEFT -> {:#?}",left);
+                    println!("RIGHT -> {:#?}",right);
                     let input = exec_cmds(left);
 
                     let out = pipe_cmds(right, input);

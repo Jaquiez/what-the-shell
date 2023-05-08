@@ -194,6 +194,9 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
             _=>{}
         }
     }
+    if inParen {
+        error(0,String::from("Expected closing \")\""));
+    }
     return Some(ast);
 }
 

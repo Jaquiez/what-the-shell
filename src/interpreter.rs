@@ -1,9 +1,9 @@
 use crate::{ast::{Symbol,AST,Kind,Expr}, error};
 use crate::error::error;
-use std::{process::{Command,Stdio}, io::Write,io::stdin, fs};
+use std::{process::{Command,Stdio}, io::Write,io::{stdin,stdout, Read}, fs};
 use std::fs::{OpenOptions,File};
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Value{
     sym: Symbol,
     val: String,
@@ -52,8 +52,10 @@ fn pipe_cmds(cmds: Vec<Value>,input: Vec<u8>) -> Vec<u8>{
                 .spawn();
             if proc.is_ok(){
                 let mut child = proc.unwrap();
-                child.stdin.as_mut().unwrap().write_all(&input);
-                out.append(&mut child.wait_with_output().expect("Failed to read stdout").stdout);
+                child.stdin.as_mut().unwrap().write_all(&input)
+                    .expect("Error when writing to file.");
+                out.append(&mut child.wait_with_output()
+                    .expect("Failed to read stdout.").stdout);
             }
             else{
                 println!("Error when executing command \"{}\"\n {:#?}"
@@ -63,6 +65,7 @@ fn pipe_cmds(cmds: Vec<Value>,input: Vec<u8>) -> Vec<u8>{
     }
     return out;
 }
+
 fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
     match expr.kind {
         Kind::EXPR =>{
@@ -94,7 +97,7 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                             print!("{}",out_string);
                         }
                         return Some(Value { 
-                            sym: Symbol::NONE, 
+                            sym: Symbol::STRING, 
                             val: out_string, 
                             flags: Vec::new(), 
                             args: Vec::new()
@@ -159,18 +162,85 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                         print!("{}",out_string);
                     }
                     return Some(Value { 
-                        sym: Symbol::NONE, 
+                        sym: Symbol::STRING, 
                         val: out_string, 
                         flags: Vec::new(), 
                         args: Vec::new() 
                     });
                 },
+                Symbol::REDIR_LEFT =>{
+                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
+                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
+                    if right[0].sym != Symbol::FILE {
+                        println!("{:#?}",right);
+                        println!("Expected some type of file.");
+                        return None;
+                    }
+                    let path = fs::metadata(&right[0].val);
+                    if path.is_ok() {
+                        let meta = path.unwrap();
+                        if meta.is_file(){
+                            let buf = fs::read_to_string(&right[0].val)
+                                .expect("Failed to read file");
+                            let output = pipe_cmds(left, buf.into_bytes().to_vec());
+                            let out_string = String::from_utf8(output).unwrap();
+
+                            if exec_type == ExecType::NORMAL{
+                                print!("{}",out_string);
+                            }
+                            return Some(Value { 
+                                sym: Symbol::STRING, 
+                                val: out_string, 
+                                flags: Vec::new(), 
+                                args: Vec::new() 
+                            });
+                        }
+                        else if meta.is_dir(){
+                            println!("Expected some type of file, got directory.");
+                            return None;
+                        }
+                    }
+                    else{
+                        println!("Error: No such file \"{}\"",&right[0].val);
+                    }
+                }
+                Symbol::DOUBLE_REDIR_LEFT=>{
+                    let left = interpret_program(expr.left.as_ref()
+                        .unwrap(),ExecType::DELAY_EXEC)
+                        .expect("Error when executing left"); 
+                    let right = interpret_program(expr.right.as_ref()
+                        .unwrap(),ExecType::DELAY_EXEC)
+                        .expect("Error when executing right");
+                    let end_str = &right.clone()[0].val;
+                    let mut input = String::new();
+                    let mut line = String::new();
+                    loop {
+                        print!("heredoc > ");
+                        stdout().flush().expect("Failed to flush stdout");
+                        stdin().read_line(&mut line).unwrap();
+                        input += &line;
+                        if line.strip_suffix("\n").unwrap() == end_str.as_str(){
+                            break;
+                        }
+                        line.clear();
+                    }
+                    let output = pipe_cmds(left, input.as_bytes().to_vec());
+                    let out_string = String::from_utf8(output)
+                        .expect("Error converting output to utf-8.");
+                    if exec_type == ExecType::NORMAL{
+                        print!("{}",out_string);
+                    }
+                    return Some(Value { 
+                        sym: Symbol::STRING, 
+                        val: out_string, 
+                        flags: Vec::new(), 
+                        args: Vec::new() 
+                    });
+                }
                 _=>{}
             }
         }
         Kind::VALUE =>{
-            //println!("VALUE -> {:#?}",expr);
-            //println!("Exec_Type -> {:#?}",exec_type);
             if exec_type == ExecType::DELAY_EXEC || expr.symbol != Symbol::CMD{
                 return Some(Value { 
                     sym: expr.symbol, 
@@ -186,7 +256,7 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     .output();
                 if output.is_ok(){
                     return Some(Value { 
-                        sym: Symbol::NONE, 
+                        sym: Symbol::STRING, 
                         val:String::from_utf8(output.unwrap().stdout).unwrap(), 
                         flags: Vec::new(), 
                         args: Vec::new() 

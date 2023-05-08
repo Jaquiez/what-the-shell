@@ -5,8 +5,8 @@ mod error;
 mod ast;
 mod interpreter;
 use scanner::Scanner;
-
-
+use std::{thread, time::Duration};
+use std::env::current_dir;
 use std::{ env, fs, io::{ stdin, stdout, Write } };
 
 use crate::{parser::parse_program, interpreter::interpret_program};
@@ -14,26 +14,38 @@ fn main() {
     run_prompt();
 }
 
-fn run(source: &String) {
+fn run(source: &str) {
     let mut lexer = Scanner::new(source.to_string());
-    println!("Initial Source: {}",source.to_string());
+    //println!("Initial Source: {}",source.to_string());
     lexer.scan_tokens();
-    println!("{:#?}", lexer);
+    //println!("{:#?}", lexer);
     let ast = parse_program(lexer).unwrap();
+    //println!("{:#?}", ast);
     interpret_program(&ast,interpreter::ExecType::NORMAL);
-}
-fn run_file(path: &String) {
-    let contents = fs::read_to_string(path).expect(format!("{path} is not a valid path").as_str());
-    run(&contents);
 }
 
 fn run_prompt() {
+    let cur_dir = current_dir().unwrap();
     let mut line = String::new();
     loop {
-        print!("> ");
+        print!("λ {} ",cur_dir.to_str().unwrap());
         stdout().flush().expect("Failed to flush stdout");
         stdin().read_line(&mut line).unwrap();
-        run(&line);
+        if line == "exit\n" {
+            break;
+        }
+        let runStr = line.clone();
+        let out = thread::spawn(move ||{
+            run(&runStr);
+        }).join();
+        match out {
+            Ok(_)=>{
+                //Success!
+            },
+            Err(error)=>{
+                //println!("Error in thread {:#?}",error);
+            }
+        }
         line.clear();
     }
 }

@@ -39,9 +39,7 @@ pub enum Symbol {
     PIPE,
     // Literals.
     CMD,
-    ARG,
     STRING,
-    IONUMBER,
     FILE,
     // Keywords.
 

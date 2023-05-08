@@ -46,14 +46,12 @@ pub enum TokenType {
     REDIR_RIGHT,
     DOUBLE_REDIR_RIGHT,
     DOUBLE_REDIR_LEFT,
-    DUP_REDIR,
     PIPE,
 
 
     // Literals.
     WORD,
     STRING,
-    IONUMBER,
     // Keywords.
 
     //SCRIPT,

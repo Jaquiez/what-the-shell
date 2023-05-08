@@ -26,8 +26,7 @@ A simple shell written in Rust using a tree walk intepreter for the scripting la
     STRING          → /".*"/;
     WORD            → /[A-Za-z0-9_-_.]+/;
 
-    unary_operator  → "&"
-                    | ";";
+    unary_operator  → ";";
     
     binary_operator → "|"
                     | ">";

@@ -5,9 +5,9 @@ mod error;
 mod ast;
 mod interpreter;
 use scanner::Scanner;
-use std::{thread, time::Duration};
+use std::thread;
 use std::env::current_dir;
-use std::{ env, fs, io::{ stdin, stdout, Write } };
+use std::{io::{ stdin, stdout, Write } };
 
 use crate::{parser::parse_program, interpreter::interpret_program};
 fn main() {
@@ -21,7 +21,7 @@ fn run(source: &str) {
     //println!("{:#?}", lexer);
     let ast = parse_program(lexer).unwrap();
     //println!("{:#?}", ast);
-    interpret_program(&ast,interpreter::ExecType::NORMAL);
+    interpret_program(&ast,interpreter::ExecType::Normal);
 }
 
 fn run_prompt() {
@@ -34,17 +34,12 @@ fn run_prompt() {
         if line == "exit\n" {
             break;
         }
-        let runStr = line.clone();
+        let run_str = line.clone();
         let out = thread::spawn(move ||{
-            run(&runStr);
+            run(&run_str);
         }).join();
         match out {
-            Ok(_)=>{
-                //Success!
-            },
-            Err(error)=>{
-                //println!("Error in thread {:#?}",error);
-            }
+            _=>{}
         }
         line.clear();
     }

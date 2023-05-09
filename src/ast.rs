@@ -17,30 +17,25 @@ pub struct Expr{
 
 #[derive(Debug,PartialEq,Eq)]
 pub enum Kind{
-    NONE,
-    EXPR,
-    VALUE
+    //None,
+    Expr,
+    Value
 }
 
 #[derive(Debug,Clone, Copy, PartialEq, Eq)]
 pub enum Symbol {
     // Single-character tokens.
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    SEMICOLON,
-    POUND, 
-    STAR,
 
-    REDIR_LEFT,
-    REDIR_RIGHT,
-    DOUBLE_REDIR_RIGHT,
-    DOUBLE_REDIR_LEFT,
-    DUP_REDIR,
-    PIPE,
+    RedirLeft,
+    RedirRight,
+    DoubleRedirRight,
+    DoubleRedirLeft,
+    //DupRedir,
+    Pipe,
     // Literals.
-    CMD,
-    STRING,
-    FILE,
+    Cmd,
+    String,
+    File,
     // Keywords.
 
     //SCRIPT,
@@ -52,7 +47,6 @@ pub enum Symbol {
     //TRUE,
     //VAR,
     //WHILE,
-    NONE,
-    EOF
+    None
 }
 

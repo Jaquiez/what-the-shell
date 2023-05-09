@@ -1,6 +1,5 @@
-use crate::{ast::{Symbol,AST,Kind,Expr}, error};
-use crate::error::error;
-use std::{process::{Command,Stdio}, io::Write,io::{stdin,stdout, Read}, fs};
+use crate::{ast::{Symbol,AST,Kind,Expr}};
+use std::{process::{Command,Stdio}, io::Write,io::{stdin,stdout}, fs};
 use std::fs::{OpenOptions,File};
 
 #[derive(Debug,Clone)]
@@ -13,15 +12,15 @@ pub struct Value{
 
 #[derive(PartialEq,Eq,Clone, Copy, Debug)]
 pub enum ExecType{
-    NORMAL,
-    DELAY_EXEC,
-    QUIET
+    Normal,
+    DelayExec,
+    Quiet
 }
 
 fn exec_cmds(cmds: Vec<Value>) -> Vec<u8> {
     let mut out = Vec::new();
     for cmd in cmds{
-        if cmd.sym == Symbol::CMD{
+        if cmd.sym == Symbol::Cmd{
             let output = Command::new(&cmd.val)
                 .args(cmd.flags)
                 .args(cmd.args)
@@ -43,7 +42,7 @@ fn exec_cmds(cmds: Vec<Value>) -> Vec<u8> {
 fn pipe_cmds(cmds: Vec<Value>,input: Vec<u8>) -> Vec<u8>{
     let mut out = Vec::new();
     for cmd in cmds{
-        if cmd.sym == Symbol::CMD{
+        if cmd.sym == Symbol::Cmd{
             let proc= Command::new(&cmd.val)
                 .args(cmd.flags)
                 .args(cmd.args)
@@ -68,19 +67,26 @@ fn pipe_cmds(cmds: Vec<Value>,input: Vec<u8>) -> Vec<u8>{
 
 fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
     match expr.kind {
-        Kind::EXPR =>{
+        Kind::Expr =>{
             match expr.symbol {
-                Symbol::NONE =>{
+                Symbol::None =>{
                     if expr.left.is_none() {
                         return None;
                     }
-                    let astleft = interpret_program(expr.left.as_ref().unwrap(),ExecType::QUIET);
+                    let astleft;
+                    if exec_type == ExecType::DelayExec{
+                        astleft = interpret_program(expr.left.as_ref().unwrap(),exec_type);
+                    }
+                    else{
+                        astleft = interpret_program(expr.left.as_ref().unwrap(),ExecType::Quiet);
+                    }
                     if astleft.is_none(){
                         //println!("{:#?}",astleft);
                         return None;
                     }
+                    //println!("{:#?}",astleft);
                     let left = astleft.unwrap();
-                    if exec_type == ExecType::DELAY_EXEC{
+                    if exec_type == ExecType::DelayExec{
                         if left.len() > 0 {
                             return Some(Value { 
                                 sym: left[0].sym, 
@@ -93,11 +99,11 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     else if left.len() > 0 {
                         let out_string = left.iter()
                             .fold(String::from(""), |cur,next| cur + &next.val);
-                        if exec_type != ExecType::QUIET{
+                        if exec_type != ExecType::Quiet{
                             print!("{}",out_string);
                         }
                         return Some(Value { 
-                            sym: Symbol::STRING, 
+                            sym: Symbol::String, 
                             val: out_string, 
                             flags: Vec::new(), 
                             args: Vec::new()
@@ -107,10 +113,10 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                         //println!("ERROR! {:#?}",left);
                     }
                 }
-                Symbol::REDIR_RIGHT | Symbol::DOUBLE_REDIR_RIGHT =>{
-                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::QUIET).unwrap(); 
-                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
-                    if right[0].sym != Symbol::FILE {
+                Symbol::RedirRight | Symbol::DoubleRedirRight =>{
+                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::Quiet).unwrap(); 
+                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DelayExec).unwrap(); 
+                    if right[0].sym != Symbol::File {
                         println!("{:#?}",right);
                         println!("Expected some type of file.");
                         return None;
@@ -121,15 +127,17 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     if path.is_ok() {
                         let meta = path.unwrap();
                         if meta.is_file(){
-                            if expr.symbol == Symbol::DOUBLE_REDIR_RIGHT{
+                            if expr.symbol == Symbol::DoubleRedirRight{
                                 let mut file: File = OpenOptions::new()
                                     .append(true)
                                     .open(&right[0].val)
                                     .unwrap();
-                                file.write_all(buf.as_bytes());
+                                file.write_all(buf.as_bytes())
+                                    .expect("Error when writing to file.");
                             }
                             else{
-                                fs::write(&right[0].val, buf);
+                                fs::write(&right[0].val, buf)
+                                    .expect("Error when writing to file");
                             }
 
                         }
@@ -139,9 +147,10 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                         }
                     }
                     else{
-                        let mut file = File::create(&right[0].val);
+                        let file = File::create(&right[0].val);
                         if file.is_ok(){
-                            file.unwrap().write_all(buf.as_bytes());
+                            file.unwrap().write_all(buf.as_bytes())
+                                .expect("Error when writing to file");
                         }
                         else {
                             println!("Error when opening file: {:#?}",file);
@@ -149,29 +158,29 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     }
 
                 },
-                Symbol::PIPE=>{
-                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::QUIET).unwrap(); 
-                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
-                    println!("LEFT -> {:#?}",left);
-                    println!("RIGHT -> {:#?}",right);
+                Symbol::Pipe=>{
+                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::Quiet).unwrap(); 
+                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DelayExec).unwrap(); 
+                    //println!("LEFT -> {:#?}",left);
+                    //println!("RIGHT -> {:#?}",right);
                     let input = exec_cmds(left);
 
                     let out = pipe_cmds(right, input);
                     let out_string = String::from_utf8(out).unwrap();
-                    if exec_type != ExecType::QUIET{
+                    if exec_type != ExecType::Quiet{
                         print!("{}",out_string);
                     }
                     return Some(Value { 
-                        sym: Symbol::STRING, 
+                        sym: Symbol::String, 
                         val: out_string, 
                         flags: Vec::new(), 
                         args: Vec::new() 
                     });
                 },
-                Symbol::REDIR_LEFT =>{
-                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
-                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DELAY_EXEC).unwrap(); 
-                    if right[0].sym != Symbol::FILE {
+                Symbol::RedirLeft =>{
+                    let left = interpret_program(expr.left.as_ref().unwrap(),ExecType::DelayExec).unwrap(); 
+                    let right = interpret_program(expr.right.as_ref().unwrap(),ExecType::DelayExec).unwrap(); 
+                    if right[0].sym != Symbol::File {
                         println!("{:#?}",right);
                         println!("Expected some type of file.");
                         return None;
@@ -185,11 +194,11 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                             let output = pipe_cmds(left, buf.into_bytes().to_vec());
                             let out_string = String::from_utf8(output).unwrap();
 
-                            if exec_type == ExecType::NORMAL{
+                            if exec_type == ExecType::Normal{
                                 print!("{}",out_string);
                             }
                             return Some(Value { 
-                                sym: Symbol::STRING, 
+                                sym: Symbol::String, 
                                 val: out_string, 
                                 flags: Vec::new(), 
                                 args: Vec::new() 
@@ -204,12 +213,12 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                         println!("Error: No such file \"{}\"",&right[0].val);
                     }
                 }
-                Symbol::DOUBLE_REDIR_LEFT=>{
+                Symbol::DoubleRedirLeft=>{
                     let left = interpret_program(expr.left.as_ref()
-                        .unwrap(),ExecType::DELAY_EXEC)
+                        .unwrap(),ExecType::DelayExec)
                         .expect("Error when executing left"); 
                     let right = interpret_program(expr.right.as_ref()
-                        .unwrap(),ExecType::DELAY_EXEC)
+                        .unwrap(),ExecType::DelayExec)
                         .expect("Error when executing right");
                     let end_str = &right.clone()[0].val;
                     let mut input = String::new();
@@ -227,11 +236,11 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     let output = pipe_cmds(left, input.as_bytes().to_vec());
                     let out_string = String::from_utf8(output)
                         .expect("Error converting output to utf-8.");
-                    if exec_type == ExecType::NORMAL{
+                    if exec_type == ExecType::Normal{
                         print!("{}",out_string);
                     }
                     return Some(Value { 
-                        sym: Symbol::STRING, 
+                        sym: Symbol::String, 
                         val: out_string, 
                         flags: Vec::new(), 
                         args: Vec::new() 
@@ -240,8 +249,8 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                 _=>{}
             }
         }
-        Kind::VALUE =>{
-            if exec_type == ExecType::DELAY_EXEC || expr.symbol != Symbol::CMD{
+        Kind::Value =>{
+            if exec_type == ExecType::DelayExec || expr.symbol != Symbol::Cmd{
                 return Some(Value { 
                     sym: expr.symbol, 
                     val: String::from(expr.value.as_ref().unwrap().as_str()),
@@ -256,7 +265,7 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
                     .output();
                 if output.is_ok(){
                     return Some(Value { 
-                        sym: Symbol::STRING, 
+                        sym: Symbol::String, 
                         val:String::from_utf8(output.unwrap().stdout).unwrap(), 
                         flags: Vec::new(), 
                         args: Vec::new() 
@@ -269,21 +278,15 @@ fn interpret_expression(expr: &Expr,exec_type: ExecType) -> Option<Value>{
             }
 
         }
-        Kind::NONE =>{
-            println!("Got none\n{:#?}",expr);
-        }
-        _=>{
-            error(0,String::from("Unexpected Kind!"));
-        }
     }
     return None;
 }
 pub fn interpret_program(ast : &AST, exec_type: ExecType) -> Option<Vec<Value>>{
     let mut output = Vec::new();
     ast.exprs.iter().for_each(|expr: &Expr|{
-        let outCur = interpret_expression(expr,exec_type);
-        if !outCur.is_none(){
-            output.push(outCur.unwrap());
+        let out_cur = interpret_expression(expr,exec_type);
+        if !out_cur.is_none(){
+            output.push(out_cur.unwrap());
         }
         //println!("{:#?}",output);
     });

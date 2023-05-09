@@ -20,38 +20,38 @@ impl Token {
 #[derive(Debug)]
 pub enum WTSType {
     String(String),
-    Number(i32),
-    EXPR,
+    //Number(i32),
+    //EXPR,
     NONE
 }
 #[derive(Debug,Clone, Copy,  PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
-    LEFT_PAREN,
-    RIGHT_PAREN,
+    LeftParen,
+    RightParen,
     //LEFT_BRACE,
     //RIGHT_BRACE,
     //COMMA,
     //DOT,
     //MINUS,
     //PLUS,
-    SEMICOLON,
-    POUND, 
-    STAR,
+    Semicolon,
+    Pound, 
+    //Star,
     
     // One or two character tokens.
-    SHORT_FLAG,
-    LONG_FLAG,
-    REDIR_LEFT,
-    REDIR_RIGHT,
-    DOUBLE_REDIR_RIGHT,
-    DOUBLE_REDIR_LEFT,
-    PIPE,
+    ShortFlag,
+    LongFlag,
+    RedirLeft,
+    RedirRight,
+    DoubleRedirRight,
+    DoubleRedirLeft,
+    Pipe,
 
 
     // Literals.
-    WORD,
-    STRING,
+    Word,
+    String,
     // Keywords.
 
     //SCRIPT,

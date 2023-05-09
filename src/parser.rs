@@ -1,130 +1,130 @@
 use crate::scanner::Scanner;
 use crate::token::{WTSType, Token, TokenType};
 use crate::ast::{Symbol,AST,Kind,Expr};
-use crate::error::{self, error};
+use crate::error::error;
 
 
 
-fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
+fn parse_expression(toks: &mut Vec<Token>,in_paren: bool) -> Option<AST>{
     let mut ast: AST = AST { exprs: vec![] };
     let mut iscomment = false;
     ast.exprs.push(Expr{
-        kind: Kind::EXPR,
+        kind: Kind::Expr,
         flags: Vec::new(),
         value: Some(String::new()),
         args: Vec::new(),
-        symbol: Symbol::NONE,
+        symbol: Symbol::None,
         left:None,
         right: None
     });
     let mut counter = 0;
     while toks.len() > 0{
         let tok = toks.remove(0);
-        if(iscomment){continue;}
+        if iscomment {continue;}
         match tok.t_type {
-            TokenType::LEFT_PAREN => {
+            TokenType::LeftParen => {
                 if ast.exprs[counter].left.is_none() {
                     ast.exprs[counter].left = parse_expression(toks, true);
                 }
-                else if !(ast.exprs[counter].right.is_none() && ast.exprs[counter].symbol == Symbol::NONE){
+                else if !(ast.exprs[counter].right.is_none() && ast.exprs[counter].symbol == Symbol::None){
                     ast.exprs[counter].right = parse_expression(toks, true);
                 }
                 else{
                     error(tok.line, String::from("Parse error on parsing expression ("));
                 }
             },
-            TokenType::RIGHT_PAREN => {
-                if inParen {
+            TokenType::RightParen => {
+                if in_paren {
                     return Some(ast);
                 }
                 error(tok.line,String::from("Parser error on parens"));
             }
-            TokenType::SHORT_FLAG => {
+            TokenType::ShortFlag => {
                 let flag = toks.remove(0);
-                if(flag.t_type != TokenType::WORD){
+                if flag.t_type != TokenType::Word{
                     error(flag.line,String::from("Parser error: Invalid flag"));
                 }
-                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     ast.exprs[counter].left.as_mut().unwrap().exprs[0].flags.push(String::from("-") + &flag.lexeme);
                 }
-                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     ast.exprs[counter].right.as_mut().unwrap().exprs[0].flags.push(String::from("-") + &flag.lexeme);
                 }
                 else{
                     error(tok.line,String::from("Error when parsing flag"));
                 }
             },
-            TokenType::LONG_FLAG =>{
+            TokenType::LongFlag =>{
                 let flag = toks.remove(0);
-                if(flag.t_type != TokenType::WORD){
+                if flag.t_type != TokenType::Word{
                     error(flag.line,String::from("Parser error: Invalid flag"));
                 }
-                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                if ast.exprs[counter].right.as_mut().is_none() && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     ast.exprs[counter].left.as_mut().unwrap().exprs[0].flags.push(String::from("--") + &flag.lexeme);
                 }
-                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     ast.exprs[counter].right.as_mut().unwrap().exprs[0].flags.push(String::from("--") + &flag.lexeme);
                 }
                 else{
                     error(tok.line,String::from("Error when parsing flag"));
                 }
             },
-            TokenType::SEMICOLON => {
+            TokenType::Semicolon => {
                 ast.exprs.push(Expr{
-                    kind: Kind::EXPR,
+                    kind: Kind::Expr,
                     value: Some(String::new()),
                     flags: Vec::new(),
                     args: Vec::new(),
-                    symbol: Symbol::NONE,
+                    symbol: Symbol::None,
                     left:None,
                     right: None
                 });
                 counter+=1;
             },
-            TokenType::PIPE =>{
+            TokenType::Pipe =>{
                 if ast.exprs[counter].left.is_none() || !ast.exprs[counter].right.is_none(){
                     error(tok.line,String::from("Binary expression \"|\" encountered parse error."));
                 }
-                ast.exprs[counter].kind = Kind::EXPR;
-                ast.exprs[counter].symbol = Symbol::PIPE;
+                ast.exprs[counter].kind = Kind::Expr;
+                ast.exprs[counter].symbol = Symbol::Pipe;
                 ast.exprs[counter].value = Some(tok.lexeme);
             }
-            TokenType::REDIR_LEFT =>{
+            TokenType::RedirLeft =>{
                 if ast.exprs[counter].left.is_none() || !ast.exprs[counter].right.is_none(){
                     error(tok.line,String::from("Binary expression \"<\" encountered parse error."));
                 }
-                ast.exprs[counter].kind = Kind::EXPR;
-                ast.exprs[counter].symbol = Symbol::REDIR_LEFT;
+                ast.exprs[counter].kind = Kind::Expr;
+                ast.exprs[counter].symbol = Symbol::RedirLeft;
                 ast.exprs[counter].value = Some(tok.lexeme);
             },
-            TokenType::DOUBLE_REDIR_LEFT=> {
+            TokenType::DoubleRedirLeft=> {
                 if ast.exprs[counter].left.is_none() || !ast.exprs[counter].right.is_none(){
                     error(tok.line,String::from("Binary expression \"<<\" encountered parse error."));
                 }
-                ast.exprs[counter].kind = Kind::EXPR;
-                ast.exprs[counter].symbol = Symbol::DOUBLE_REDIR_LEFT;
+                ast.exprs[counter].kind = Kind::Expr;
+                ast.exprs[counter].symbol = Symbol::DoubleRedirLeft;
                 ast.exprs[counter].value = Some(tok.lexeme);
             },
-            TokenType::REDIR_RIGHT=>{
+            TokenType::RedirRight=>{
                 if ast.exprs[counter].left.is_none() || !ast.exprs[counter].right.is_none(){
                     error(tok.line,String::from("Binary expression \">\" encountered parse error."));
                 }
-                ast.exprs[counter].kind = Kind::EXPR;
-                ast.exprs[counter].symbol = Symbol::REDIR_RIGHT;
+                ast.exprs[counter].kind = Kind::Expr;
+                ast.exprs[counter].symbol = Symbol::RedirRight;
                 ast.exprs[counter].value = Some(tok.lexeme);
             },
-            TokenType::DOUBLE_REDIR_RIGHT =>{
+            TokenType::DoubleRedirRight =>{
                 if ast.exprs[counter].left.is_none() || !ast.exprs[counter].right.is_none(){
                     error(tok.line,String::from("Binary expression \">>\" encountered parse error."));
                 }
-                ast.exprs[counter].kind = Kind::EXPR;
-                ast.exprs[counter].symbol = Symbol::DOUBLE_REDIR_RIGHT;
+                ast.exprs[counter].kind = Kind::Expr;
+                ast.exprs[counter].symbol = Symbol::DoubleRedirRight;
                 ast.exprs[counter].value = Some(tok.lexeme);
             },
-            TokenType::POUND => {
+            TokenType::Pound => {
                 iscomment = true;
             },
-            TokenType::WORD | TokenType::STRING =>{
+            TokenType::Word | TokenType::String =>{
                 if ast.exprs[counter].left.is_none(){
                     ast.exprs[counter].left = Some(AST { exprs: Vec::new() });
                     let val = match tok.literal {
@@ -133,16 +133,16 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                     };
                     ast.exprs[counter].left.as_mut().unwrap().exprs.push(
                         Expr { 
-                            kind: Kind::VALUE, 
+                            kind: Kind::Value, 
                             flags: Vec::new(), 
                             value: Some(val),
                             args: Vec::new(), 
-                            symbol: Symbol::CMD, 
+                            symbol: Symbol::Cmd, 
                             left: None, 
                             right: None 
                         });
                 }
-                else if ast.exprs[counter].symbol==Symbol::NONE && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                else if ast.exprs[counter].symbol==Symbol::None && ast.exprs[counter].left.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     let val = match tok.literal {
                         WTSType::String(s)=>s,
                         _=>tok.lexeme
@@ -151,22 +151,22 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                 }
                 else if ast.exprs[counter].right.is_none(){
                     ast.exprs[counter].right = Some(AST { exprs: Vec::new() });
-                    let mut sym = Symbol::NONE;
+                    let mut sym = Symbol::None;
                     match ast.exprs[counter].symbol {
-                        Symbol::REDIR_LEFT =>{
-                            sym = Symbol::FILE;
+                        Symbol::RedirLeft =>{
+                            sym = Symbol::File;
                         },
-                        Symbol::DOUBLE_REDIR_LEFT =>{
-                            sym = Symbol::STRING;
+                        Symbol::DoubleRedirLeft =>{
+                            sym = Symbol::String;
                         },
-                        Symbol::REDIR_RIGHT =>{
-                            sym = Symbol::FILE;
+                        Symbol::RedirRight =>{
+                            sym = Symbol::File;
                         },
-                        Symbol::DOUBLE_REDIR_RIGHT=>{
-                            sym = Symbol::FILE;
+                        Symbol::DoubleRedirRight=>{
+                            sym = Symbol::File;
                         }
-                        Symbol::PIPE =>{
-                            sym = Symbol::CMD;
+                        Symbol::Pipe =>{
+                            sym = Symbol::Cmd;
                         }
                         _=>{
                             error(tok.line,String::from("Parse error, right hand command without "))
@@ -174,7 +174,7 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                     }
                     ast.exprs[counter].right.as_mut().unwrap().exprs.push(
                         Expr { 
-                            kind: Kind::VALUE, 
+                            kind: Kind::Value, 
                             flags: Vec::new(), 
                             value: Some(String::from(tok.lexeme)),
                             args: Vec::new(), 
@@ -183,7 +183,7 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
                             right: None 
                         });
                 }
-                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::CMD{
+                else if ast.exprs[counter].right.as_mut().unwrap().exprs[0].symbol == Symbol::Cmd{
                     ast.exprs[counter].right.as_mut().unwrap().exprs[0].args.push(tok.lexeme);
                 }
                 else {
@@ -194,7 +194,7 @@ fn parse_expression(toks: &mut Vec<Token>,inParen: bool) -> Option<AST>{
             _=>{}
         }
     }
-    if inParen {
+    if in_paren {
         error(0,String::from("Expected closing \")\""));
     }
     return Some(ast);

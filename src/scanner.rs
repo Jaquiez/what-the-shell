@@ -65,12 +65,6 @@ impl Scanner {
         }
         return self.source.chars().nth(self.current).unwrap();
     }
-    fn peekNext(&mut self) -> char {
-        if !(self.current + 1 < self.source.len()) {
-            return '\0';
-        }
-        return self.source.chars().nth(self.current + 1).unwrap();
-    }
     fn string(&mut self) {
         while self.peek() != '"' && self.current < self.source.len() {
             if self.peek() == '\n' {
@@ -86,7 +80,7 @@ impl Scanner {
         let lexeme = &self.source.as_mut_str()[self.start..self.current];
         let literal = &lexeme[1..lexeme.len() - 1];
         self.tokens.push(Token::new(
-            TokenType::STRING,
+            TokenType::String,
             WTSType::String(String::from(literal)),
             String::from(lexeme),
             self.line,
@@ -121,7 +115,7 @@ impl Scanner {
         let key = &self.source.as_mut_str()[self.start..self.current];
         let type_of = KEYWORDS.get(key);
         if type_of.is_none() {
-            self.add_token(TokenType::WORD);
+            self.add_token(TokenType::Word);
         } else {
             self.add_token(*type_of.unwrap());
         }
@@ -131,20 +125,20 @@ impl Scanner {
             self.start = self.current;
             let c = self.advance();
             match c {
-                '(' => self.add_token(TokenType::LEFT_PAREN),
-                ')' => self.add_token(TokenType::RIGHT_PAREN),
+                '(' => self.add_token(TokenType::LeftParen),
+                ')' => self.add_token(TokenType::RightParen),
                 //'{' => self.add_token(TokenType::LEFT_BRACE),
                 //'}' => self.add_token(TokenType::RIGHT_BRACE),
                 //',' => self.add_token(TokenType::COMMA),
                 '-' => {
                     if self.match_next('-') {
-                        self.add_token(TokenType::LONG_FLAG);
+                        self.add_token(TokenType::LongFlag);
                     } else {
-                        self.add_token(TokenType::SHORT_FLAG);
+                        self.add_token(TokenType::ShortFlag);
                     }
                 },
                 //'+' => self.add_token(TokenType::PLUS),
-                ';' => self.add_token(TokenType::SEMICOLON),
+                ';' => self.add_token(TokenType::Semicolon),
                 //'*' => self.add_token(TokenType::STAR),
                 //'!' => {
                 //    if self.match_next('=') {
@@ -161,20 +155,20 @@ impl Scanner {
                 //    }
                 //}
                 '|' =>{
-                    self.add_token(TokenType::PIPE);
+                    self.add_token(TokenType::Pipe);
                 }
                 '<' => {
                     if self.match_next('<') {
-                        self.add_token(TokenType::DOUBLE_REDIR_LEFT);
+                        self.add_token(TokenType::DoubleRedirLeft);
                     } else {
-                        self.add_token(TokenType::REDIR_LEFT);
+                        self.add_token(TokenType::RedirLeft);
                     }
                 }
                 '>' => {
                     if self.match_next('>') {
-                        self.add_token(TokenType::DOUBLE_REDIR_RIGHT);
+                        self.add_token(TokenType::DoubleRedirRight);
                     } else {
-                        self.add_token(TokenType::REDIR_RIGHT);
+                        self.add_token(TokenType::RedirRight);
                     }
                 }
                 '#' => {
@@ -183,7 +177,7 @@ impl Scanner {
                             self.advance();
                         }
                     } else {
-                        self.add_token(TokenType::POUND);
+                        self.add_token(TokenType::Pound);
                     }
                 }
                 '\n' => self.line += 1,

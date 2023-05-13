@@ -76,9 +76,9 @@ Scanner {
 
 ### Grammar
 
-The grammar below covers what types of statements are allowed by the language. This is not one-to-one as there are some features that need to be implemented. For example binary expressions cannot be changed without using parenthesis to isolate each binary expression:
+The grammar below covers what types of statements are allowed by the language. This is not one-to-one as there are some features that need to be implemented. For example binary expressions cannot be chained without using parenthesis to isolate each binary expression:
 #### Invalid
-`invalid`:`echo "AAAAAAAA" | base64 > out.txt`
+`echo "AAAAAAAA" | base64 > out.txt`
 #### Valid
 `(echo "AAAAAAAAA" | base64) > out.txt`
 ```

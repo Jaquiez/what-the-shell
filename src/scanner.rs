@@ -108,7 +108,7 @@ impl Scanner {
     */
 
     fn identifier(&mut self) {
-        let keys = vec!['(',')','-',';','#','>','<','#'];
+        let keys = vec!['(',')','-',';','#','>','<','#','|'];
         while !self.peek().is_whitespace() && !keys.contains(&self.peek()) {
             self.advance();
         }

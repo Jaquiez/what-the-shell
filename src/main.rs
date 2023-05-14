@@ -6,7 +6,7 @@ mod ast;
 mod interpreter;
 use scanner::Scanner;
 use std::{io::{stdout, stdin, Write}};
-use std::{process, path};
+use std::process;
 use std::path::Path;
 use std::thread;
 use std::env::current_dir;
@@ -20,9 +20,9 @@ fn main() {
 fn run(source: &str,exec : ExecContext) {
     let mut lexer = Scanner::new(source.to_string());
     lexer.scan_tokens();
-    println!("{:#?}",lexer);
+    //println!("{:#?}",lexer);
     let ast = parse_program(lexer).unwrap();
-    println!("{:#?}",ast);
+    //println!("{:#?}",ast);
     exec.interpret_program(&ast,interpreter::ExecType::Normal);
 }
 

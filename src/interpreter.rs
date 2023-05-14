@@ -1,5 +1,5 @@
 use crate::{ast::{Symbol,AST,Kind,Expr}};
-use std::{process::{Command,Stdio}, io::Write,io::{stdin,stdout}, fs};
+use std::{process::{Command,Stdio, Child}, io::Write,io::{stdin,stdout, Error}, fs};
 use std::fs::{OpenOptions,File};
 use std::path::Path;
 
@@ -32,17 +32,20 @@ impl ExecContext{
         let mut out = Vec::new();
         for cmd in cmds{
             if cmd.sym == Symbol::Cmd{
-                let output = Command::new(&cmd.val)
+                let proc = Command::new(&cmd.val)
                     .args(cmd.flags)
                     .args(cmd.args)
                     .current_dir(self.cur_dir.clone())
-                    .output();
-                if output.is_ok(){
-                    out.append(output.unwrap().stdout.as_mut());
+                    .spawn();
+                if proc.is_ok(){
+                    let child = proc.unwrap();
+                    let mut output = child.wait_with_output()
+                        .expect("Error occured when parsing output").stdout;
+                    out.append(&mut output);
                 }
                 else{
                     println!("Error when executing command \"{}\"\n {:#?}"
-                        ,cmd.val.clone().to_string(),output);
+                        ,cmd.val.clone().to_string(),proc);
                 }
             }
             else{
@@ -67,7 +70,8 @@ impl ExecContext{
                     child.stdin.as_mut().unwrap().write_all(&input)
                         .expect("Error when writing to file.");
                     out.append(&mut child.wait_with_output()
-                        .expect("Failed to read stdout.").stdout);
+                        .expect("Failed to read stdout.").stdout
+                    );
                 }
                 else{
                     println!("Error when executing command \"{}\"\n {:#?}"
@@ -227,7 +231,7 @@ impl ExecContext{
                             astleft = self.interpret_program(expr.left.as_ref().unwrap(),exec_type);
                         }
                         else{
-                            astleft = self.interpret_program(expr.left.as_ref().unwrap(),ExecType::Quiet);
+                            astleft = self.interpret_program(expr.left.as_ref().unwrap(),exec_type);
                         }
                         if astleft.is_none(){
                             return None;
@@ -246,9 +250,9 @@ impl ExecContext{
                         else if left.len() > 0 {
                             let out_string = left.iter()
                                 .fold(String::from(""), |cur,next| cur + &next.val);
-                            if exec_type != ExecType::Quiet{
-                                print!("{}",out_string);
-                            }
+                            //if exec_type != ExecType::Quiet{
+                            //    print!("{}",out_string);
+                            //}
                             return Some(Value { 
                                 sym: Symbol::String, 
                                 val: out_string, 
@@ -285,21 +289,44 @@ impl ExecContext{
                     });
                 }
                 else{
-                    let output = Command::new(expr.value.as_ref().unwrap())
-                        .args(expr.flags.clone())
-                        .args(expr.args.clone())
-                        .current_dir(self.cur_dir.clone())
-                        .output();
-                    if output.is_ok(){
+                    //This should be a default pipe that 
+                    //is the same as a normal terminal
+                    let mut proc:Result<Child,Error>;
+                    //pipe it and read the output so our program can handle it
+                    if exec_type == ExecType::Quiet{
+                        //println!("QUIET!");
+                        proc = Command::new(expr.value.as_ref().unwrap())
+                            .args(expr.flags.clone())
+                            .args(expr.args.clone())
+                            .current_dir(self.cur_dir.clone())
+                            .stdout(Stdio::piped())
+                            .spawn();                    
+                    }
+                    else{
+                        //println!("lOUD?");
+
+                        proc = Command::new(expr.value.as_ref().unwrap())
+                            .args(expr.flags.clone())
+                            .args(expr.args.clone())
+                            .current_dir(self.cur_dir.clone())
+                            .spawn();
+                    }
+                    //println!("{:#?}",proc);
+
+
+                    if proc.is_ok(){
+                        let child = proc.unwrap();
+                        let output = child.wait_with_output()
+                            .expect("Error occured when parsing output").stdout;
                         return Some(Value { 
                             sym: Symbol::String, 
-                            val:String::from_utf8(output.unwrap().stdout).unwrap(), 
+                            val:String::from_utf8(output).unwrap(), 
                             flags: Vec::new(), 
                             args: Vec::new() 
                         })
                     }
                     else {
-                        println!("Error when executing command \"{}\"\n {:#?}",expr.value.as_ref().unwrap(),output);
+                        println!("Error when executing command \"{}\"\n {:#?}",expr.value.as_ref().unwrap(),proc);
                     }
                 }
     

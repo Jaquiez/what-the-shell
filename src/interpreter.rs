@@ -196,13 +196,14 @@ impl ExecContext{
         let mut input = String::new();
         let mut line = String::new();
         loop {
-            print!("heredoc > ");
-            stdout().flush().expect("Failed to flush stdout");
+            print!("heredoc >");
+            stdout().flush()
+                .expect("Failed to flush stdout");
             stdin().read_line(&mut line).unwrap();
-            input += &line;
             if line.strip_suffix("\n").unwrap() == end_str.as_str(){
                 break;
             }
+            input += &line;
             line.clear();
         }
         let output = self.pipe_cmds(left, input.as_bytes().to_vec());

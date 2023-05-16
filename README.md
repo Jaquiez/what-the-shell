@@ -2,6 +2,7 @@
 
 A simple shell written in Rust using a tree walk interpreter for the shell language.
 
+Video for the presentation can be found here: https://clipchamp.com/watch/9wrVWDX2xLV
 
 ## Interpreter Processes
 

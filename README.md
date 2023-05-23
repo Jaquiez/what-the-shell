@@ -4,6 +4,8 @@ A simple shell written in Rust using a tree walk interpreter for the shell langu
 
 Video for the presentation can be found here: https://clipchamp.com/watch/9wrVWDX2xLV
 
+EDIT: Slides for people who don't want to watch the whole video - https://docs.google.com/presentation/d/1vUpUE-dkuJjHqtZvWVFs8UWOmYhYhau5036-VSf3Dtg/edit?usp=sharing
+
 ## Interpreter Processes
 
 ### Tokenizing
